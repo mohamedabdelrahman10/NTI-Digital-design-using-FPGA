@@ -4,10 +4,9 @@ input clk,
 input rx_en,
 input rx_rst,
 input rx_arst_n,
-input rx_bit ,
+input rx ,
 
-output begin_receive ,
-output rx
+output edge_enable_fsm
 );
 
 parameter a = 0;
@@ -24,16 +23,17 @@ else
 cs <= ns;
 end
 
+
 always@(*) begin
 
 case(cs) 
 
-a : if(rx_bit)
+a : if(rx)
 		begin
 		ns = a;
 		end
 	
-	else if(~rx_bit) 
+	else if(~rx) 
 		begin
 		ns = b;
 		end
@@ -44,7 +44,6 @@ endcase
 
 end
 
-assign begin_receive = (cs==b)? 1'b1:1'b0;
-assign rx = rx_bit;
+assign edge_enable_fsm = (cs==b)? 1'b1:1'b0;
 
 endmodule

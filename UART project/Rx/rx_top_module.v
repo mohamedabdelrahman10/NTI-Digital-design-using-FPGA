@@ -14,18 +14,17 @@ output [7:0] data_out
 );
 
 wire baud_to_fsm;
-wire fsm_to_baud;
-wire edge_to_fsm;
-wire fsm_to_sipo;
-wire edge_data;
+wire fsm_enable_baud;
+wire edge_enable_fsm;
+wire fsm_enable_sipo;
 
-rx_fsm fsm(.rx(edge_data) , .clk(clk) , .rx_en(rx_en) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .baud_counter_in(baud_to_fsm) , .begin_receive(edge_to_fsm) , .enable_sipo(fsm_to_sipo) , .err_flag(err) , .done_flag(done) , .busy_flag(busy) , .baud_start(fsm_to_baud) );
+rx_fsm fsm(.rx(rx) , .clk(clk) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .baud_to_fsm(baud_to_fsm) , .edge_enable_fsm(edge_enable_fsm) , .fsm_enable_sipo(fsm_enable_sipo) , .err_flag(err) , .done_flag(done) , .busy_flag(busy) , .fsm_enable_baud(fsm_enable_baud) );
 
-rx_baud_counter baud_counter( .clk(clk) , .rx_en_fsm(fsm_to_baud) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .rx_baud_counter_out(baud_to_fsm) );
+rx_baud_counter baud_counter( .clk(clk) , .fsm_enable_baud(fsm_enable_baud) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .baud_to_fsm(baud_to_fsm) );
 
-rx_edge_detector edge_detector(.rx_bit(rx) , .rx(edge_data)  , .clk(clk) , .rx_en(rx_en) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .begin_receive(edge_to_fsm) );
+rx_edge_detector edge_detector(.rx(rx) , .clk(clk) , .rx_en(rx_en) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .edge_enable_fsm(edge_enable_fsm) );
 
-rx_sipo sipo(.rx(rx) , .clk(clk) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .data_out(data_out) , .enable(fsm_to_sipo) );
+rx_sipo sipo(.rx(rx) , .clk(clk) , .rx_rst(rx_rst) , .rx_arst_n(rx_arst_n) , .data_out(data_out) , .fsm_enable_sipo(fsm_enable_sipo) );
 
 
 endmodule

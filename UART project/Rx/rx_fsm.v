@@ -2,17 +2,19 @@ module rx_fsm (
 
 input rx,
 input clk,
-input rx_en,
 input rx_rst,
 input rx_arst_n,
-input baud_counter_in,
-input begin_receive ,
+input baud_to_fsm,
+input edge_enable_fsm ,
 
-output enable_sipo,
+
+
+output     fsm_enable_sipo,
+output reg fsm_enable_baud,
 output reg err_flag,
 output reg done_flag,
-output reg busy_flag,
-output reg baud_start
+output reg busy_flag
+
 
 );
 
@@ -39,27 +41,28 @@ else if(rx_rst)
 	end
 
 else
-
 cs <= ns;
-
-
 end
+
 
 always@(*) begin
 
 case(cs)
 idle : begin
-			baud_start <= 1'b0;
+			fsm_enable_baud <= 1'b0;
 			err_flag  <= 1'b0; 
 			done_flag <= 1'b0;
 			busy_flag <= 1'b0;
-			if (begin_receive) ns = start; else ns = idle;
-
+			counter = 0;
+			if (edge_enable_fsm) 
+				ns = start; 
+			else 
+				ns = idle;
 
 		end
 		
 start: begin
-			baud_start <= 1'b1;
+			fsm_enable_baud <= 1'b1;
 			err_flag   <= 1'b0; 
 			done_flag  <= 1'b0;
 			busy_flag  <= 1'b1;
@@ -68,47 +71,49 @@ start: begin
 		
 data : begin
 
-			if (baud_counter_in && counter < 8) 
+			if ((baud_to_fsm) && (counter < 8)) 
 				begin
-				    baud_start <= 1'b1;
+				    fsm_enable_baud <= 1'b1;
 					err_flag  <= 1'b0; 
 					done_flag <= 1'b0;
 					busy_flag <= 1'b1;
-					counter   <= counter + 1'b1;
+					counter   = counter + 1 ;
 					ns = data;
 				end
 				
-			else if (counter==8 && baud_counter_in)
+			else if (counter==8 && baud_to_fsm)
 				begin
-				baud_start <= 1'b1;
-				err_flag  <= 1'b0; 
-				done_flag <= 1'b0;
-				busy_flag <= 1'b1;
-				if(rx==1) ns = done;
-				else if(rx==0) ns = err;
+				fsm_enable_baud <= 1'b1;
+				err_flag  		<= 1'b0; 
+				done_flag 		<= 1'b0;
+				busy_flag 		<= 1'b1;
+				if(rx==1) 
+					ns = done;
+				else if(rx==0) 
+					ns = err ;
 				
 				end
 		end
 		
 err  : begin
-			baud_start <= 1'b0;
-			err_flag  <= 1'b1; 
-			done_flag <= 1'b0;
-			busy_flag <= 1'b0;
+			fsm_enable_baud <= 1'b0;
+			err_flag  		<= 1'b1; 
+			done_flag 		<= 1'b0;
+			busy_flag 		<= 1'b0;
 			ns = idle;
 		end
 		
 done : begin
-			baud_start <= 1'b0;
-			err_flag  <= 1'b0; 
-			done_flag <= 1'b1;
-			busy_flag <= 1'b0;
+			fsm_enable_baud <= 1'b0;
+			err_flag  		<= 1'b0; 
+			done_flag 		<= 1'b1;
+			busy_flag 		<= 1'b0;
 			ns = idle;
 		end
 endcase
 
 end
 
-assign enable_sipo = (cs == data && counter < 8 )? baud_counter_in:1'b0;
+assign fsm_enable_sipo = (cs == data && counter < 9 )? baud_to_fsm:1'b0;
 
 endmodule
